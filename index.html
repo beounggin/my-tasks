@@ -1,18 +1,235 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>할 일 관리</title>
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#ffffff" />
-    <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>할 일 관리</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;padding-bottom:40px}
+.container{max-width:640px;margin:0 auto;padding:0 16px}
+h1{font-size:22px;font-weight:600;padding:20px 0 16px;color:#111}
+.tabs{display:flex;gap:4px;border-bottom:1px solid #e0e0e0;margin-bottom:20px}
+.tab{padding:8px 18px;font-size:14px;color:#666;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit}
+.tab.active{color:#111;border-bottom:2px solid #111;font-weight:500}
+.screen{display:none}.screen.active{display:block}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:10px;padding:12px 8px;text-align:center;border:1px solid #ebebeb}
+.stat-n{font-size:22px;font-weight:600;color:#111}
+.stat-l{font-size:12px;color:#888;margin-top:2px}
+.add-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.add-row input[type=text]{flex:1;min-width:140px;height:38px;padding:0 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;font-family:inherit;background:#fff}
+.add-row select,.add-row input[type=date]{height:38px;padding:0 8px;border-radius:8px;border:1px solid #ddd;font-size:13px;font-family:inherit;background:#fff}
+.btn{height:38px;padding:0 16px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn:hover{background:#f0f0f0}
+.section-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.task-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.task{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #ebebeb;border-radius:10px;padding:10px 12px}
+.task.done{opacity:.6}
+.check{width:20px;height:20px;border-radius:50%;border:1.5px solid #ccc;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#fff}
+.check.on{background:#4CAF50;border-color:#4CAF50}
+.info{flex:1;min-width:0}
+.ttl{font-size:14px;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.done .ttl{text-decoration:line-through;color:#aaa}
+.meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.p1{background:#FCEBEB;color:#A32D2D}.p2{background:#FAEEDA;color:#854F0B}.p3{background:#EAF3DE;color:#3B6D11}.p4{background:#F1EFE8;color:#5F5E5A}
+.datelabel{font-size:12px;color:#999}
+.del{background:none;border:none;color:#bbb;cursor:pointer;font-size:14px;padding:4px 6px;flex-shrink:0}
+.empty{text-align:center;padding:24px 0;color:#bbb;font-size:14px}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #ebebeb}
+.card-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.prog-row{display:flex;align-items:center;gap:12px}
+.prog-track{flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;background:#4CAF50;transition:width .3s}
+.prog-pct{font-size:13px;font-weight:500;color:#444;white-space:nowrap}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-lbl{width:36px;font-size:12px;color:#666;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:10px;background:#f0f0f0;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.bar-cnt{width:20px;font-size:12px;color:#888;text-align:right;flex-shrink:0}
+.day-grid{display:flex;gap:6px;align-items:flex-end;justify-content:space-between}
+.day-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.day-bar-wrap{height:64px;display:flex;align-items:flex-end}
+.day-bar{width:100%;min-height:4px;border-radius:3px 3px 0 0;background:#4361ee;min-width:20px;transition:height .3s}
+.day-lbl{font-size:10px;color:#aaa}
+.day-cnt{font-size:11px;font-weight:500;color:#666}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>할 일 관리</h1>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today')">오늘</button>
+    <button class="tab" onclick="switchTab('all')">전체</button>
+    <button class="tab" onclick="switchTab('dashboard')">대시보드</button>
+  </div>
+
+  <!-- 오늘 -->
+  <div id="s-today" class="screen active">
+    <div id="sg-today" class="stat-grid"></div>
+    <div class="add-row">
+      <input type="text" id="t-title" placeholder="할 일 입력..." onkeydown="if(event.key==='Enter')addTask('today')">
+      <select id="t-pri"><option value="1">🔴 긴급</option><option value="2" selected>🟡 높음</option><option value="3">🟢 보통</option><option value="4">⚪ 낮음</option></select>
+      <input type="date" id="t-date">
+      <button class="btn" onclick="addTask('today')">+ 추가</button>
+    </div>
+    <div class="section-title">오늘 마감</div>
+    <div class="task-list" id="l-today"></div>
+    <div class="section-title" style="margin-top:8px">예정</div>
+    <div class="task-list" id="l-upcoming"></div>
+  </div>
+
+  <!-- 전체 -->
+  <div id="s-all" class="screen">
+    <div class="add-row">
+      <input type="text" id="a-title" placeholder="할 일 입력..." onkeydown="if(event.key==='Enter')addTask('all')">
+      <select id="a-pri"><option value="1">🔴 긴급</option><option value="2" selected>🟡 높음</option><option value="3">🟢 보통</option><option value="4">⚪ 낮음</option></select>
+      <input type="date" id="a-date">
+      <button class="btn" onclick="addTask('all')">+ 추가</button>
+    </div>
+    <div class="task-list" id="l-all"></div>
+  </div>
+
+  <!-- 대시보드 -->
+  <div id="s-dashboard" class="screen">
+    <div id="sg-dash" class="stat-grid"></div>
+    <div class="card">
+      <div class="card-title">전체 진행률</div>
+      <div class="prog-row"><div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div><span class="prog-pct" id="prog-pct"></span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">우선순위별 현황</div>
+      <div id="pri-chart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">최근 7일 완료 수</div>
+      <div class="day-grid" id="day-chart"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLAB=['','긴급','높음','보통','낮음'];
+const PCLS=['','p1','p2','p3','p4'];
+const PCOL=['','#E24B4A','#EF9F27','#639922','#888780'];
+const KEY='tasks-v1';
+
+const todayStr=()=>new Date().toISOString().slice(0,10);
+
+let tasks=[];
+let nid=1;
+
+function load(){
+  try{
+    const s=localStorage.getItem(KEY);
+    if(s){const d=JSON.parse(s);tasks=d.tasks;nid=d.nid;}
+    else initSample();
+  }catch{initSample();}
+}
+function save(){localStorage.setItem(KEY,JSON.stringify({tasks,nid}));}
+function initSample(){
+  const t=todayStr();
+  tasks=[
+    {id:1,title:'분기 보고서 초안 작성',priority:1,date:t,done:false},
+    {id:2,title:'클라이언트 미팅 자료 준비',priority:2,date:t,done:false},
+    {id:3,title:'팀 주간 회의',priority:3,date:t,done:true},
+  ];
+  nid=4;
+}
+
+function taskEl(t){
+  const d=document.createElement('div');
+  d.className='task'+(t.done?' done':'');
+  d.innerHTML=`<div class="check ${t.done?'on':''}" onclick="toggle(${t.id})">${t.done?'✓':''}</div>
+  <div class="info"><div class="ttl">${t.title}</div>
+  <div class="meta"><span class="badge ${PCLS[t.priority]}">${PLAB[t.priority]}</span>${t.date?'<span class="datelabel">'+t.date.replace(/^\d{4}-/,'')+'</span>':''}</div></div>
+  <button class="del" onclick="del(${t.id})">✕</button>`;
+  return d;
+}
+
+function toggle(id){const t=tasks.find(x=>x.id===id);if(t){t.done=!t.done;save();render();}}
+function del(id){tasks=tasks.filter(x=>x.id!==id);save();render();}
+
+function addTask(src){
+  const ti=document.getElementById(src==='today'?'t-title':'a-title');
+  const pi=document.getElementById(src==='today'?'t-pri':'a-pri');
+  const di=document.getElementById(src==='today'?'t-date':'a-date');
+  if(!ti.value.trim())return;
+  tasks.push({id:nid++,title:ti.value.trim(),priority:+pi.value,date:di.value||todayStr(),done:false});
+  ti.value='';save();render();
+}
+
+function statGridHTML(total,done,pending,pct){
+  return [['전체',total],['완료',done],['미완료',pending],['진행률',pct+'%']].map(([l,n])=>`<div class="stat-card"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`).join('');
+}
+
+function render(){
+  const t=todayStr();
+  const todayT=tasks.filter(x=>x.date===t).sort((a,b)=>a.priority-b.priority);
+  const upT=tasks.filter(x=>x.date>t).sort((a,b)=>a.date.localeCompare(b.date)||a.priority-b.priority);
+  const allT=[...tasks].sort((a,b)=>a.priority-b.priority||a.date.localeCompare(b.date));
+  const total=tasks.length,done=tasks.filter(x=>x.done).length,pct=total?Math.round(done/total*100):0;
+
+  // 오늘 탭
+  ['sg-today','sg-dash'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=statGridHTML(total,done,total-done,pct);});
+  const lt=document.getElementById('l-today');lt.innerHTML='';
+  if(!todayT.length)lt.innerHTML='<div class="empty">오늘 할 일 없음</div>';
+  else todayT.forEach(x=>lt.appendChild(taskEl(x)));
+  const lu=document.getElementById('l-upcoming');lu.innerHTML='';
+  if(!upT.length)lu.innerHTML='<div class="empty">예정된 할 일 없음</div>';
+  else upT.forEach(x=>lu.appendChild(taskEl(x)));
+
+  // 전체 탭
+  const la=document.getElementById('l-all');la.innerHTML='';
+  if(!allT.length)la.innerHTML='<div class="empty">할 일 없음</div>';
+  else allT.forEach(x=>la.appendChild(taskEl(x)));
+
+  // 대시보드
+  const pf=document.getElementById('prog-fill');if(pf)pf.style.width=pct+'%';
+  const pp=document.getElementById('prog-pct');if(pp)pp.textContent=pct+'% ('+done+'/'+total+')';
+
+  const pc=document.getElementById('pri-chart');
+  if(pc){pc.innerHTML='';
+    const mx=Math.max(...[1,2,3,4].map(p=>tasks.filter(x=>x.priority===p).length),1);
+    [1,2,3,4].forEach(p=>{
+      const cnt=tasks.filter(x=>x.priority===p).length;
+      const w=Math.round(cnt/mx*100);
+      const r=document.createElement('div');r.className='bar-row';
+      r.innerHTML=`<div class="bar-lbl">${PLAB[p]}</div><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${PCOL[p]}"></div></div><div class="bar-cnt">${cnt}</div>`;
+      pc.appendChild(r);
+    });
+  }
+
+  const dc=document.getElementById('day-chart');
+  if(dc){dc.innerHTML='';
+    const days=Array.from({length:7},(_,i)=>{
+      const d=new Date();d.setDate(d.getDate()-(6-i));
+      const key=d.toISOString().slice(0,10);
+      return{label:(d.getMonth()+1)+'/'+(d.getDate()),count:tasks.filter(x=>x.date===key&&x.done).length};
+    });
+    const mx2=Math.max(...days.map(d=>d.count),1);
+    days.forEach(d=>{
+      const col=document.createElement('div');col.className='day-col';
+      const h=Math.round(d.count/mx2*60);
+      col.innerHTML=`<div class="day-bar-wrap"><div class="day-bar" style="height:${Math.max(h,4)}px"></div></div><div class="day-lbl">${d.label}</div><div class="day-cnt">${d.count}</div>`;
+      dc.appendChild(col);
+    });
+  }
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['today','all','dashboard'][i]===name));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+}
+
+// 날짜 기본값
+const td=todayStr();
+document.getElementById('t-date').value=td;
+document.getElementById('a-date').value=td;
+
+load();render();
+</script>
+</body>
 </html>
